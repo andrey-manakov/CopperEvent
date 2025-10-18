@@ -43,7 +43,7 @@ def register(bot: TeleBot) -> None:
             bot.send_message(
                 message.chat.id,
                 greeting,
-                reply_markup=keyboards.main_reply_keyboard(),
+                reply_markup=keyboards.main_menu_keyboard(),
             )
             if invite and invite.inviter_id != user.id:
                 bot.send_message(message.chat.id, "Friendship established!")
@@ -79,20 +79,52 @@ def register(bot: TeleBot) -> None:
     def browse_button(message: types.Message) -> None:
         from . import browse as browse_handler
 
-        browse_handler.show_browse(bot, message)
+        browse_handler.show_browse(bot, message.chat.id, message.from_user)
 
     @bot.message_handler(func=lambda m: m.text and m.text.lower() == "my")
     def my_button(message: types.Message) -> None:
         from . import my as my_handler
 
-        my_handler.show_my_events(bot, message)
+        my_handler.show_my_events(bot, message.chat.id, message.from_user)
 
     @bot.message_handler(func=lambda m: m.text and m.text.lower() == "friends")
     def friends_button(message: types.Message) -> None:
         from . import friends as friends_handler
 
-        friends_handler.show_friends(bot, message)
+        friends_handler.show_friends(bot, message.chat.id, message.from_user)
 
     @bot.message_handler(func=lambda m: m.text and m.text.lower() == "settings")
     def settings_button(message: types.Message) -> None:
-        settings_handler.prompt_timezone(bot, message)
+        settings_handler.prompt_timezone(bot, message.chat.id, message.from_user)
+
+    @bot.callback_query_handler(func=lambda call: call.data and call.data.startswith("NAV:"))
+    def handle_navigation(call: types.CallbackQuery) -> None:
+        action = call.data.split(":", maxsplit=1)[1].upper()
+        chat_id = call.message.chat.id if call.message else None
+        if not chat_id:
+            bot.answer_callback_query(call.id)
+            return
+        bot.answer_callback_query(call.id)
+        if action == "NEW":
+            new_event.begin_flow(bot, chat_id, call.from_user)
+            return
+        if action == "MY":
+            from . import my as my_handler
+
+            my_handler.show_my_events(bot, chat_id, call.from_user)
+            return
+        if action == "BROWSE":
+            from . import browse as browse_handler
+
+            browse_handler.show_browse(bot, chat_id, call.from_user)
+            return
+        if action == "FRIENDS":
+            from . import friends as friends_handler
+
+            friends_handler.show_friends(bot, chat_id, call.from_user)
+            return
+        if action == "SETTINGS":
+            settings_handler.prompt_timezone(bot, chat_id, call.from_user)
+            return
+        if action == "HELP":
+            bot.send_message(chat_id, texts.HELP)
