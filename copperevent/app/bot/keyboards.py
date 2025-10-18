@@ -5,11 +5,20 @@ from telebot import types
 from ..utils.dates import TIME_SLOTS
 
 
-def main_reply_keyboard() -> types.ReplyKeyboardMarkup:
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    markup.row("New", "My")
-    markup.row("Browse", "Friends")
-    markup.row("Settings", "Help")
+def main_menu_keyboard() -> types.InlineKeyboardMarkup:
+    markup = types.InlineKeyboardMarkup()
+    markup.row(
+        types.InlineKeyboardButton("New", callback_data="NAV:NEW"),
+        types.InlineKeyboardButton("My", callback_data="NAV:MY"),
+    )
+    markup.row(
+        types.InlineKeyboardButton("Browse", callback_data="NAV:BROWSE"),
+        types.InlineKeyboardButton("Friends", callback_data="NAV:FRIENDS"),
+    )
+    markup.row(
+        types.InlineKeyboardButton("Settings", callback_data="NAV:SETTINGS"),
+        types.InlineKeyboardButton("Help", callback_data="NAV:HELP"),
+    )
     return markup
 
 

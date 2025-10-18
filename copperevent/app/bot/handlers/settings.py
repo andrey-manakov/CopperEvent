@@ -16,7 +16,7 @@ _waiting_timezone: Set[int] = set()
 def register(bot: TeleBot) -> None:
     @bot.message_handler(commands=["settings"])
     def handle_settings(message: types.Message) -> None:
-        prompt_timezone(bot, message)
+        prompt_timezone(bot, message.chat.id, message.from_user)
 
     @bot.message_handler(func=lambda m: m.from_user.id in _waiting_timezone)
     def receive_timezone(message: types.Message) -> None:
@@ -38,18 +38,18 @@ def register(bot: TeleBot) -> None:
         _waiting_timezone.discard(message.from_user.id)
 
 
-def prompt_timezone(bot: TeleBot, message: types.Message) -> None:
+def prompt_timezone(bot: TeleBot, chat_id: int, user: types.User) -> None:
     with session_scope() as session:
         user_repo = UserRepository(session)
-        display_name = " ".join(filter(None, [message.from_user.first_name, message.from_user.last_name])) or None
-        user = user_repo.get_or_create(
-            message.from_user.id,
-            message.from_user.username,
+        display_name = " ".join(filter(None, [user.first_name, user.last_name])) or None
+        db_user = user_repo.get_or_create(
+            user.id,
+            user.username,
             display_name,
             app_settings.default_tz,
         )
-        bot.send_message(message.chat.id, f"Current timezone: {user.tz}\n{texts.ASK_TIMEZONE}")
-    _waiting_timezone.add(message.from_user.id)
+        bot.send_message(chat_id, f"Current timezone: {db_user.tz}\n{texts.ASK_TIMEZONE}")
+    _waiting_timezone.add(user.id)
 
 
 def cancel_waiting(user_id: int) -> None:

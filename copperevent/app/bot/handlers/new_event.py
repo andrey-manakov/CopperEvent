@@ -26,11 +26,11 @@ def cancel_flow(user_id: int) -> None:
 def register(bot: TeleBot) -> None:
     @bot.message_handler(commands=["new"])
     def handle_new(message: types.Message) -> None:
-        _begin_flow(bot, message)
+        begin_flow(bot, message.chat.id, message.from_user)
 
     @bot.message_handler(func=lambda m: m.text and m.text.lower() == "new")
     def handle_new_button(message: types.Message) -> None:
-        _begin_flow(bot, message)
+        begin_flow(bot, message.chat.id, message.from_user)
 
     @bot.message_handler(func=lambda m: _user_states.get(m.from_user.id, {}).get("step") == "type")
     def handle_type(message: types.Message) -> None:
@@ -106,7 +106,7 @@ def register(bot: TeleBot) -> None:
         _reset_state(user_id)
 
 
-def _begin_flow(bot: TeleBot, message: types.Message) -> None:
-    user_id = message.from_user.id
+def begin_flow(bot: TeleBot, chat_id: int, user: types.User) -> None:
+    user_id = user.id
     _user_states[user_id] = {"step": "type", "data": {}}
-    bot.send_message(message.chat.id, texts.PROMPT_EVENT_TYPE)
+    bot.send_message(chat_id, texts.PROMPT_EVENT_TYPE)
